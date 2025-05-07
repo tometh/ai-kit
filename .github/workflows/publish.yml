@@ -121,6 +121,9 @@ jobs:
         with:
           version: 9
 
+      - name: Clean pnpm store
+        run: pnpm store prune
+
       - name: Install dependencies
         run: |
           pnpm install
