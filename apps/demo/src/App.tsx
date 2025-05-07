@@ -1,4 +1,4 @@
-import { hello } from "@carv-protocol/core";
+import { hello } from "@aiKit-protocol/core";
 
 function App() {
   return (

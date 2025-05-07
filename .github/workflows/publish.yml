@@ -12,14 +12,15 @@ on:
   workflow_dispatch:
     inputs:
       package:
-        description: "要发布的子项目名称"
+        description: "Package name to publish"
         required: true
         type: choice
         options:
           - core
           - demo
+          - ai-translator
       version:
-        description: "发布版本号"
+        description: "Version to publish"
         required: true
         type: string
         default: "patch"
@@ -38,15 +39,15 @@ jobs:
       - name: Detect changed packages
         id: set-matrix
         run: |
-          # 获取所有包及其路径
+          # Get all packages and their paths
           PACKAGES=$(find packages apps -maxdepth 1 -mindepth 1 -type d -exec sh -c 'echo $(basename {}) $(dirname {})' \; | sort -k2)
           echo "All packages (sorted): $PACKAGES"
 
-          # 获取变更文件
+          # Get changed files
           CHANGED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }})
           echo "Changed files: $CHANGED_FILES"
 
-          # 查找变更的包
+          # Find changed packages
           CHANGED_PACKAGES=""
           while IFS=' ' read -r pkg dir; do
             if echo "$CHANGED_FILES" | grep -q -E "^$dir/$pkg/"; then
@@ -54,7 +55,7 @@ jobs:
             fi
           done <<< "$PACKAGES"
 
-          # 格式化为 JSON 矩阵
+          # Format as JSON matrix
           if [ -n "$CHANGED_PACKAGES" ]; then
             FORMATTED_PACKAGES=$(echo "$CHANGED_PACKAGES" | sed 's/^,//')
             echo "matrix={\"package\":[$FORMATTED_PACKAGES]}" >> $GITHUB_OUTPUT
@@ -75,7 +76,7 @@ jobs:
         run: |
           MATRIX_JSON='${{ needs.detect-changes.outputs.matrix }}'
           echo "Matrix JSON: $MATRIX_JSON"
-          # 检查 package 数组是否为空
+          # Check if package array is empty
           if [[ "$MATRIX_JSON" == *"\"package\":[]"* ]]; then
             echo "matrix={\"package\":[\"skip\"]}" >> $GITHUB_OUTPUT
           else
@@ -87,7 +88,7 @@ jobs:
         if: github.event_name == 'workflow_dispatch'
         id: set-matrix-dispatch
         run: |
-          # 假设 workflow_dispatch 输入的包都在 apps/ 目录下，core 在 packages/
+          # Assume workflow_dispatch input packages are in apps/ directory, core in packages/
           PKG_PATH="apps"
           if [ "${{ github.event.inputs.package }}" = "core" ]; then
             PKG_PATH="packages"
@@ -123,9 +124,9 @@ jobs:
       - name: Install dependencies
         run: |
           pnpm install
-          # 调试：检查工作区依赖
+          # Debug: Check workspace dependencies
           ls -la packages/core || true
-          ls -la apps/demo/node_modules/@carv-protocol || true
+          ls -la apps/demo/node_modules/@aiKit-protocol || true
 
       - name: Update version
         if: github.event_name == 'workflow_dispatch'
@@ -133,7 +134,7 @@ jobs:
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
           cd ${{ matrix.package.path }}/${{ matrix.package.name }}
-          # 确保版本递增正确
+          # Ensure version increment is correct
           CURRENT_VERSION=$(node -p "require('./package.json').version")
           echo "Current version: $CURRENT_VERSION"
           pnpm version ${{ github.event.inputs.version }} --no-git-tag-version
@@ -148,8 +149,8 @@ jobs:
         run: |
           echo "Building package: ${{ matrix.package.name }}"
           cd ${{ matrix.package.path }}/${{ matrix.package.name }}
-          # 调试：检查依赖
-          ls -la node_modules/@carv-protocol || true
+          # Debug: Check dependencies
+          ls -la node_modules/@aiKit-protocol || true
           pnpm build
         continue-on-error: false
 
@@ -158,7 +159,7 @@ jobs:
           ls -la ${{ matrix.package.path }}/${{ matrix.package.name }}/dist
 
       - name: Publish package
-        # 只对 packages/ 下的包执行发布
+        # Only publish packages in packages/ directory
         if: ${{ matrix.package.path == 'packages' }}
         run: |
           echo "Publishing package: ${{ matrix.package.name }}"
@@ -173,3 +174,11 @@ jobs:
       - name: Verify Publish
         if: ${{ matrix.package.path == 'packages' }}
         run: echo "Package published successfully"
+
+      - name: List demo node_modules
+        run: |
+          ls -la apps/demo/node_modules/@aiKit-protocol || true
+
+      - name: List root node_modules
+        run: |
+          ls -la node_modules/@aiKit-protocol || true

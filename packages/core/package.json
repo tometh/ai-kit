@@ -1,5 +1,5 @@
 {
-  "name": "@carv-protocol/core",
+  "name": "@aiKit-protocol/core",
   "version": "0.0.4",
   "type": "module",
   "main": "dist/index.js",
