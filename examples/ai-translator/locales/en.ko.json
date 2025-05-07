@@ -1,0 +1,9 @@
+{
+  "welcome": "환영합니다",
+  "features.items": "기능.항목",
+  "Hello World": "안녕하세요 세상아",
+  "Hello {{name}}": "안녕하세요 {{name}}님",
+  "features.title": "기능.제목",
+  "buttons.loading": "버튼.로딩중",
+  "buttons.translate": "버튼 번역"
+}

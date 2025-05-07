@@ -1,0 +1,175 @@
+name: Publish PROD
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "packages/**"
+      - "apps/**"
+      - ".github/workflows/publish.yml"
+      - "pnpm-lock.yaml"
+  workflow_dispatch:
+    inputs:
+      package:
+        description: "要发布的子项目名称"
+        required: true
+        type: choice
+        options:
+          - core
+          - demo
+      version:
+        description: "发布版本号"
+        required: true
+        type: string
+        default: "patch"
+
+jobs:
+  detect-changes:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed packages
+        id: set-matrix
+        run: |
+          # 获取所有包及其路径
+          PACKAGES=$(find packages apps -maxdepth 1 -mindepth 1 -type d -exec sh -c 'echo $(basename {}) $(dirname {})' \; | sort -k2)
+          echo "All packages (sorted): $PACKAGES"
+
+          # 获取变更文件
+          CHANGED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }})
+          echo "Changed files: $CHANGED_FILES"
+
+          # 查找变更的包
+          CHANGED_PACKAGES=""
+          while IFS=' ' read -r pkg dir; do
+            if echo "$CHANGED_FILES" | grep -q -E "^$dir/$pkg/"; then
+              CHANGED_PACKAGES="$CHANGED_PACKAGES,{\"name\":\"$pkg\",\"path\":\"$dir\"}"
+            fi
+          done <<< "$PACKAGES"
+
+          # 格式化为 JSON 矩阵
+          if [ -n "$CHANGED_PACKAGES" ]; then
+            FORMATTED_PACKAGES=$(echo "$CHANGED_PACKAGES" | sed 's/^,//')
+            echo "matrix={\"package\":[$FORMATTED_PACKAGES]}" >> $GITHUB_OUTPUT
+          else
+            echo "matrix={\"package\":[]}" >> $GITHUB_OUTPUT
+          fi
+        shell: bash
+
+  set-matrix-job:
+    needs: detect-changes
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix || steps.set-matrix-dispatch.outputs.matrix }}
+    steps:
+      - name: Set matrix for push event
+        if: github.event_name == 'push'
+        id: set-matrix
+        run: |
+          MATRIX_JSON='${{ needs.detect-changes.outputs.matrix }}'
+          echo "Matrix JSON: $MATRIX_JSON"
+          # 检查 package 数组是否为空
+          if [[ "$MATRIX_JSON" == *"\"package\":[]"* ]]; then
+            echo "matrix={\"package\":[\"skip\"]}" >> $GITHUB_OUTPUT
+          else
+            echo "matrix=$MATRIX_JSON" >> $GITHUB_OUTPUT
+          fi
+        shell: bash
+
+      - name: Set matrix for workflow_dispatch event
+        if: github.event_name == 'workflow_dispatch'
+        id: set-matrix-dispatch
+        run: |
+          # 假设 workflow_dispatch 输入的包都在 apps/ 目录下，core 在 packages/
+          PKG_PATH="apps"
+          if [ "${{ github.event.inputs.package }}" = "core" ]; then
+            PKG_PATH="packages"
+          fi
+          echo "matrix={\"package\":[{\"name\":\"${{ github.event.inputs.package }}\",\"path\":\"$PKG_PATH\"}]}" >> $GITHUB_OUTPUT
+        shell: bash
+
+  build-and-publish:
+    needs: set-matrix-job
+    if: ${{ fromJson(needs.set-matrix-job.outputs.matrix).package[0].name != 'skip' }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: ${{ fromJson(needs.set-matrix-job.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Ensure clean working directory
+        run: |
+          git reset --hard
+          git clean -fd
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          registry-url: "https://registry.npmjs.org/"
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install dependencies
+        run: |
+          pnpm install
+          # 调试：检查工作区依赖
+          ls -la packages/core || true
+          ls -la apps/demo/node_modules/@carv-protocol || true
+
+      - name: Update version
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          cd ${{ matrix.package.path }}/${{ matrix.package.name }}
+          # 确保版本递增正确
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          echo "Current version: $CURRENT_VERSION"
+          pnpm version ${{ github.event.inputs.version }} --no-git-tag-version
+          NEW_VERSION=$(node -p "require('./package.json').version")
+          echo "New version: $NEW_VERSION"
+          git add package.json
+          git commit -m "chore: update version for ${{ matrix.package.name }} to $NEW_VERSION"
+        env:
+          PNPM_GIT_CHECKS: false
+
+      - name: Build package
+        run: |
+          echo "Building package: ${{ matrix.package.name }}"
+          cd ${{ matrix.package.path }}/${{ matrix.package.name }}
+          # 调试：检查依赖
+          ls -la node_modules/@carv-protocol || true
+          pnpm build
+        continue-on-error: false
+
+      - name: Check build output
+        run: |
+          ls -la ${{ matrix.package.path }}/${{ matrix.package.name }}/dist
+
+      - name: Publish package
+        # 只对 packages/ 下的包执行发布
+        if: ${{ matrix.package.path == 'packages' }}
+        run: |
+          echo "Publishing package: ${{ matrix.package.name }}"
+          cd ${{ matrix.package.path }}/${{ matrix.package.name }}
+          npm whoami
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          echo "Publishing version: $CURRENT_VERSION"
+          pnpm publish --access public --no-git-checks
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Verify Publish
+        if: ${{ matrix.package.path == 'packages' }}
+        run: echo "Package published successfully"

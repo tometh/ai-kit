@@ -1,0 +1,9 @@
+{
+  "welcome": "welcome",
+  "features.items": "features.items",
+  "Hello World": "Hello World",
+  "Hello {{name}}": "Hello {{name}}",
+  "features.title": "features.title",
+  "buttons.loading": "buttons.loading",
+  "buttons.translate": "buttons.translate"
+}

@@ -1,0 +1,9 @@
+{
+  "welcome": "欢迎",
+  "features.items": "特性.项目",
+  "Hello World": "你好，世界",
+  "Hello {{name}}": "你好{{name}}",
+  "features.title": "功能.标题",
+  "buttons.loading": "按钮加载中",
+  "buttons.translate": "翻译按钮"
+}

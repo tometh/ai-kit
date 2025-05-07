@@ -1,0 +1,23 @@
+{
+  "name": "carv-fe-aikit",
+  "version": "1.0.0",
+  "private": true,
+  "description": "CARV Frontend aikit Monorepo",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "build": "pnpm -r --filter ./packages... run build && pnpm -r --filter ./apps... run build",
+    "dev": "pnpm --filter demo dev",
+    "test": "pnpm -r test",
+    "lint": "pnpm -r lint"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "engines": {
+    "node": ">=16",
+    "pnpm": ">=8"
+  }
+}
