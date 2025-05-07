@@ -1,5 +1,9 @@
 # ai-translator
 
+## Repository
+
+- [GitHub Repository](https://github.com/tometh/ai-kit/tree/main/packages/ai-translator)
+
 ## Introduction
 
 `ai-translator` is a React internationalization translation toolkit based on multiple AI models (such as ChatGPT, Grok, and DeepSeek), supporting multi-language batch translation, automatic extraction of translation keys, command-line batch processing, type safety, and high extensibility.

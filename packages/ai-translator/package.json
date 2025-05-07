@@ -1,6 +1,6 @@
 {
   "name": "aikit-translator",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "description": "AI-powered translation package for React applications",
   "type": "module",
   "main": "dist/index.js",
@@ -12,6 +12,11 @@
     "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "translate": "ts-node src/cli/index.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tometh/ai-kit.git",
+    "directory": "packages/ai-translator"
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org/"
