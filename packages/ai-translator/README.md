@@ -145,4 +145,4 @@ MIT
 
 ---
 
-For detailed documentation, secondary development, or enterprise customization, please contact the CARV team.
+For detailed documentation, secondary development, or enterprise customization, please contact the imtom.eth@gmail.com.

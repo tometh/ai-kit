@@ -1,8 +1,8 @@
 {
-  "name": "carv-fe-aikit",
+  "name": "aikit",
   "version": "1.0.0",
   "private": true,
-  "description": "CARV Frontend aikit Monorepo",
+  "description": "aikit Monorepo",
   "workspaces": [
     "packages/*",
     "apps/*"

@@ -22,7 +22,7 @@
     "chatgpt",
     "deepseek"
   ],
-  "author": "CARV",
+  "author": "Tom",
   "license": "MIT",
   "dependencies": {
     "chalk": "^4.1.2",
@@ -46,7 +46,7 @@
     "@typescript-eslint/parser": "^6.0.0",
     "@vitejs/plugin-react": "^4.0.0",
     "eslint": "^8.0.0",
-    "glob": "^11.0.2",
+    "glob": "11.0.2",
     "openai": "^4.97.0",
     "ts-node": "^10.9.0",
     "typescript": "^5.0.0",
