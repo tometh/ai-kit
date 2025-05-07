@@ -1,5 +1,5 @@
 {
-  "name": "ai-translator",
+  "name": "aikit-translator",
   "version": "0.1.0",
   "description": "AI-powered translation package for React applications",
   "type": "module",
@@ -13,6 +13,14 @@
     "preview": "vite preview",
     "translate": "ts-node src/cli/index.ts"
   },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "keywords": [
     "translation",
     "ai",
